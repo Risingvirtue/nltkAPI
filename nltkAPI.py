@@ -1,3 +1,4 @@
+import sys
 import nltk
 from nltk.corpus import stopwords
 import urllib
@@ -6,70 +7,57 @@ from queue import PriorityQueue
 #text = "Hello! Mr. Strange is cool? What is your name? It is pretty strange. Hello?"
 stop_words = set(stopwords.words("english"))
 
-extraWords = ['said', 'reading', 'story']
+extraWords = ['said', 'reading', 'story', 'news']
 
-for w in extraWords:
-    stop_words.add(w)
+def addStopWords(extraWords):
+    for w in extraWords:
+        stop_words.add(w)
 
-
-def goodWord(word):
-    if (word == "function" or word == "false" or word.find("http") != -1 or word == "require"):
-        return False
-    if (word == "main" or word.find("www") != -1 or word.find('return') != -1 or word.find('margin') != -1):
-        return False
-    if (word.find("else") != -1 or word.find('true') != -1 or word.find('null') != -1):
-        return False
-    if (word.find(".") != -1 or word.find('/') != -1 or word.find('=') != -1):
-        return False
-    return True
-
-url = "http://money.cnn.com/2018/01/12/pf/housing-prices-food-bank/index.html?iid=SF_LN"
-fp = urllib.request.urlopen(url)
-html = fp.read()
-fp.close()
-
-soup = BeautifulSoup(html, "html.parser")
-div = soup.findAll('p')
-words = []
-for x in div:
-    text = x.getText()
-    words += nltk.word_tokenize(text)
-
-filtered_sentence = [w for w in words if not w in stop_words]
+addStopWords(extraWords)
+def getWordList(html):
+    words = []
+    for x in html: #for every content in p
+        text = x.getText() #text w/o html
+        words += nltk.word_tokenize(text) #parses into words
+    filtered_sentence = [w for w in words if not w in stop_words] #remove stop_words
+    return filtered_sentence
 
 def createCount(parsedWords):
     count = {}
     for w in parsedWords:
         if w != "." and w != "?" and w != "!":
-            w = w.lower()
+            w = w.lower() #make all lowercase
             if w in count:
                 count[w] += 1
             else:
                 count[w] = 1
     return count
 
-wordDictionary = createCount(filtered_sentence)
-q = PriorityQueue()
-for key, value in wordDictionary.items():
-    if len(key) > 3:
-        if (goodWord(key)):
+def getTopTen(wordDictionary):
+    q = PriorityQueue()
+    w = []
+    for key, value in wordDictionary.items():
+        if len(key) > 3:
             q.put((-value, key))
-for i in range(10):
-    print(q.get())
+
+    for i in range(5):
+        word = q.get()
+        print(word)
+        #w += [q.get()[1]]
+    return w
 
 
+if (len(sys.argv) == 1):
+    print("Please provide a url link")
+else:
+    url = sys.argv[1]
+    fp = urllib.request.urlopen(url)
+    html = fp.read()
+    fp.close()
+    soup = BeautifulSoup(html, "html.parser")
+    div = soup.findAll('p')
 
-"""
-filtered_sentence = [w for w in words if not w in stop_words]
-
-
-
-q = PriorityQueue()
-for key, value in wordDictionary.items():
-    if len(key) > 3:
-        if (goodWord(key)):
-            q.put((-value, key))
-#for i in range(100):
-    #print(q.get())
-print(words)
-"""
+    filteredWords = getWordList(div)
+    wordDictionary = createCount(filteredWords)
+    topTen = getTopTen(wordDictionary)
+    #print()
