@@ -5,10 +5,11 @@ from bs4 import BeautifulSoup
 from queue import PriorityQueue
 #text = "Hello! Mr. Strange is cool? What is your name? It is pretty strange. Hello?"
 stop_words = set(stopwords.words("english"))
-stop_words.add('said')
-#since articles are story based
-stop_words.add('reading')
-stop_words.add('story')
+
+extraWords = ['said', 'reading', 'story']
+
+for w in extraWords:
+    stop_words.add(w)
 
 
 def goodWord(word):
@@ -22,14 +23,18 @@ def goodWord(word):
         return False
     return True
 
-var url = "http://money.cnn.com/2018/01/12/pf/housing-prices-food-bank/index.html?iid=hp-stack-dom"
-fp = urllib.request.urlopen()
+url = "http://money.cnn.com/2018/01/12/pf/housing-prices-food-bank/index.html?iid=SF_LN"
+fp = urllib.request.urlopen(url)
 html = fp.read()
 fp.close()
 
 soup = BeautifulSoup(html, "html.parser")
-div = soup.get_text()
-words = nltk.word_tokenize(div)
+div = soup.findAll('p')
+words = []
+for x in div:
+    text = x.getText()
+    words += nltk.word_tokenize(text)
+
 filtered_sentence = [w for w in words if not w in stop_words]
 
 def createCount(parsedWords):
@@ -44,11 +49,27 @@ def createCount(parsedWords):
     return count
 
 wordDictionary = createCount(filtered_sentence)
+q = PriorityQueue()
+for key, value in wordDictionary.items():
+    if len(key) > 3:
+        if (goodWord(key)):
+            q.put((-value, key))
+for i in range(10):
+    print(q.get())
+
+
+
+"""
+filtered_sentence = [w for w in words if not w in stop_words]
+
+
 
 q = PriorityQueue()
 for key, value in wordDictionary.items():
     if len(key) > 3:
         if (goodWord(key)):
             q.put((-value, key))
-for i in range(100):
-    print(q.get())
+#for i in range(100):
+    #print(q.get())
+print(words)
+"""
